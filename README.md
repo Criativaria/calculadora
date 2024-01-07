@@ -1,8 +1,8 @@
-# React + Vite
+# Calculadora que fala
+Fiz essa calculadora para o meu bisavô, que é um senhor cego, que nunca teve contato e acessibilidade com a tecnologia.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Pode ser usada para estudo! apenas clone o projeto e faça o que quiser no seu clone!  
+## Tecnologias usadas
+Feito em React e Vite, ódio e lagrimas.
+## Agradecimentos
+Quero agradecer a todo meu chat que ajudou e especialmente [Bustersky](https://github.com/gustmnds) e MizeraviTv por me ajudarem
