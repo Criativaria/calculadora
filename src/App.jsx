@@ -3,52 +3,110 @@ import { Delete, Plus, Minus, Equal, X, Divide } from "lucide-react";
 import { useEffect, useState } from "react";
 // import Falar from "./components/falar";
 
-//LISTA DE COISAS PARA RESOLVER
-//inserir os numeros pelo teclado
+//Lista de coisas pra fazer
+//verificação se a tecla pode ser teclada ou nao
 
 function App() {
-  const [isResult, setIsResult] = useState(false);
-  //logica do teclado
+  const [texto, setTexto] = useState();
+  const [info, setInfo] = useState([]); // recebe o numero que o usuário clicar
+  const msg = new SpeechSynthesisUtterance();
+  const [isResult, setIsResult] = useState(false); // verificação se ele já falou o resultado 
+  const [isDeleted, setIsDeleted] = useState(false); //verificação se ele ja falou o numero que foi apagado
   var expressao = [];
   const numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-
+  const operadores = ['+', '-', '/', '*', '%'];
   const [numeros, setNumeros] = useState([]);
-  useEffect(() => {
+  let operadorSobrou = null;
+
+  useEffect(() => { //verificações antes de fazer a conta
+    expressao = numeros.join('').split(/\s*([+\-*%/=])\s*/).filter(token => token !== '');
+    //separa os numeros das operações, e depois filtra se existe espaços vazios na array
+
+    if (expressao[0] == '-') {
+      expressao[1] = `${parseInt(expressao[1] * -1)}`;
+      expressao.splice(0, 1);
+    }//verifica se o 1º numero e negativo e tranforma ele em negativo dentro da array
+
+    expressao.forEach((elemento, index) => {
+
+      if (operadores.includes(expressao[index]) && operadores.includes(expressao[index - 1])) {
+        expressao[index - 1] = expressao[index];
+        expressao.splice(index, 1);
+        setNumeros(expressao);
+      } //verifica se o usuario está colocando 2 operadores e substitui o primeiro operador digitado.
+    });
+
+    if (expressao.includes('=')) {
+      if (operadores.includes(expressao[0]) || expressao.length <= 3) {
+        Reconhecer('operação invalida');
+        setNumeros([]);
+        return
+      }//verifica se uma operação é valida
+      if (expressao.length === 4 && expressao[3] == '=') {
+        expressao.pop()
+        conta();
+        return
+      }// calcula assim que tiver 4 elementos na operação e o usuário clicar no =
+    }
+    if (expressao.length === 4 && operadores.includes(expressao[3])) {
+      if (expressao[3] == '%') {
+        expressao[2] = (expressao[2] * expressao[0]) / 100;
+        expressao.pop();
+        conta();
+        //calculando porcentagem
+      } else {
+        operadorSobrou = expressao[3];
+        expressao.pop();
+        conta()
+      }//executa a conta quando um 2º operador é clicado, e guarda esse operador para dps
+    } else {
+      if (numeros.length > 0 && isResult == false && isDeleted == false) {
+        operadorSobrou = null;
+        let elemento = numeros[numeros.length - 1];
+        Reconhecer(elemento)
+      }// fala o que o usuário clica
+      setIsResult(false);
+    }
+  }, [numeros])
+
+  useEffect(() => { //para funcionar no teclado
     const key = (e) => {
       if (numbers.includes(e.key) || operadores.includes(e.key) || e.key == '.' || e.code == 'KeyC' || e.key == 'Backspace' || e.key == 'Enter') {
         if (e.code == 'KeyC') {
-          limpar()
+          limpar(); // caso a tecla C seja clicada ele vai limpar o visor
           return;
         } if (e.key == 'Backspace') {
-          apagar()
+          setNumeros((num) => apagar(num)); //caso a tecla de apagar seja clicada ele vai apagar o ultimo digito
           return;
         } if (e.key == 'Enter') {
-          setNumeros((num) => [...num, '='])
+          setNumeros((num) => [...num, '=']) //caso enter seja clicado ele vai efetuar a conta
           return;
         } if (e.key == '.') {
-          numeros[numeros.length - 1] == '.' ? ' ' : setNumeros((num) => [...num, '.'])
+          numeros[numeros.length - 1] == '.' ? ' ' : setNumeros((num) => [...num, '.']) //caso o ponto seja clicado ele vai mandar para o numeros
           return;
-        } if (numbers.includes(e.key) || operadores.includes(e.key)) {
+        } if (numbers.includes(e.key) || operadores.includes(e.key)) { //manda todos os numeros e operadores clicados pelo teclado para o numeros
           setNumeros((num) => [...num, e.key])
           return;
         }
-
       }
     }
-
-    window.addEventListener("keydown", key)
-
-    return () => window.removeEventListener('keydown', key);
+    window.addEventListener("keydown", key) //nao sei
+    return () => window.removeEventListener('keydown', key); //
   }, [])
 
+  useEffect(() => { //para falar
+    if (info.toString() !== '') {
+      Reconhecer(info.toString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [info])
 
-  //logica de falar
-  const [texto, setTexto] = useState();
-  const [info, setInfo] = useState([]); // recebe o numero que o usuário clicar
-  const [podeApagar, setPodeApagar] = useState(false);
-  const msg = new SpeechSynthesisUtterance();
+  useEffect(() => { //para falar
+    Falar(texto);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [texto])
 
-  function Reconhecer(numero) {
+  function Reconhecer(numero) { //reconhecendo os operadores antes de falar
     if (operadores.includes(numero) || numero == '.') {
       switch (numero) {
         case '-':
@@ -67,194 +125,124 @@ function App() {
           setTexto("ponto");
       }
     }
-    Falar(numero);
+    Falar(numero); // caso nao seja um operador ele fala direto
+    return;
   }
 
-  function Falar(mensagem) {
+  function Falar(mensagem) { // para falar
     msg.text = mensagem;
     window.speechSynthesis.speak(msg);
   }
 
-  useEffect(() => {
-    Reconhecer(info.toString());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [info])
+  function apagar(num) { //para apagar o ultimo digito
+    //apagar no teclado
+    if (num && num.length > 0) {
+      Reconhecer(`apagou ${num.pop()}`) //fala e apaga o ultimo digito
 
-  useEffect(() => {
-    Falar(texto);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [texto])
+      setTimeout(() => {
+        if (isDeleted == false) {
+          Reconhecer(`sobrou ${num}`) //fala os numeros que sobraram
+        }
+      }, 1000); //tempo antes de falar para nao acontecer repetição
 
-
-  //logica da calculadora
-
-  // eslint-disable-next-line no-unused-vars
-  const operadores = ['+', '-', '/', '*', '%'];
-
-  function apagar() {
-    setInfo(`apagou ${numeros[numeros.length - 1]}`)
-
-    let apagarNumeros = [...numeros];
-    apagarNumeros.pop();
-    setNumeros(apagarNumeros);
-    if (apagarNumeros != 0) {
-      setInfo(`sobrou: ${apagarNumeros}`)
+      let atualizacao = [...num]
+      setNumeros(atualizacao); //atualiza no visor o numero que foi apagado
+      setIsDeleted(true)
+      return num;
     }
-    setPodeApagar(true);
-  }
+    //apagar na tela
+    if (numeros.length != 0) {
+      Reconhecer(`apagou ${numeros[numeros.length - 1]}`) //fala o numero que vai ser apagado
+    }
+    let apagarNumeros = [...numeros];
+    apagarNumeros.pop(); //apaga o ultimo digito
 
-  function limpar() {
+    setTimeout(() => {
+      if (apagarNumeros.length != 0 && isDeleted == false) {
+        Reconhecer(`sobrou: ${apagarNumeros}`); //fala oq sobrou 
+      }
+    }, 1000); //seta um tempo antes de fala oq sobrou
+    setNumeros(apagarNumeros); //atualiza no visor oq foi apagado
+    setIsDeleted(true)
+  }
+  function limpar() { //apaga a operação toda
     setNumeros([]);
     setInfo('Apagou toda a operação');
   }
-
-  // eslint-disable-next-line no-unused-vars
-  let operadorSobrou = null;
-  useEffect(() => {
-
-    setPodeApagar(false)
-
-    let join = '';
-    join = numeros.join('');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    expressao = join.split(/\s*([+\-*%/=])\s*/).filter(token => token !== '');
-
-    if (expressao[0] == '-') {
-      expressao[1] = `${parseInt(expressao[1] * -1)}`;
-      expressao.splice(0, 1);
-    }
-
-    expressao.forEach((elemento, index) => {
-      // if (expressao[index] == '.' && expressao[index - 1] == '.') {
-      //   expressao[index - 1] = expressao[index];
-      //   expressao.splice(index, 1);
-      //   setNumeros(expressao);
-      // }
-
-      if (operadores.includes(expressao[index]) && operadores.includes(expressao[index - 1])) {
-        expressao[index - 1] = expressao[index];
-        expressao.splice(index, 1);
-        setNumeros(expressao);
-      }
-    });
-
-    if (expressao.includes('=')) {
-      if (operadores.includes(expressao[0]) || expressao.length <= 3 || expressao[expressao.length - 1] != "=") {
-        Reconhecer('operação invalida');
-        setNumeros([]);
-        return
-      }
-      if (expressao.length === 4 && expressao[3] == '=') {
-        expressao.pop()
-        conta();
-        return
-      }
-    }
-
-
-    if (expressao.length === 4 && operadores.includes(expressao[3])) {
-      if (expressao[3] == '%') {
-        expressao[2] = (expressao[2] * expressao[0]) / 100;
-        expressao.pop();
-        conta();
-      } else {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        operadorSobrou = expressao[3];
-        expressao.pop();
-        conta()
-      }
-    } else {
-      if (numeros.length > 0 && podeApagar == false && !isResult) {
-        operadorSobrou = null;
-        let elemento = numeros[numeros.length - 1];
-        Reconhecer(elemento)
-      }
-      setIsResult(false)
-    }
-  }, [numeros])
 
 
   function conta() {
     const operacoes = [];
     const valores = [];
-
+    //arrays em que vamos separar operadores e numeros
 
     expressao.forEach((elemento) => {
       if (operadores.includes(elemento)) {
         operacoes.push(elemento)
-      }
+      }//se for um operador vai para o array de operações
       else { valores.push(parseFloat(elemento) || 0) }
-    });
+    });//se nao for um operador vai colocar como ponto flutuante dentro da array valores
 
     for (let i = 0; i < operacoes.length; i++) {
+      if (operacoes[i] === '*') {
+        Falar(`${valores[i]} vezes ${valores[i + 1]}`);
+        valores[i] = valores[i] * valores[i + 1];
+        //se na array operações aparecer um * ele vai falar e multiplicar os valores; 
+      } else if (operacoes[i] === '/') {
+        if (valores[i] != 0 && valores[i + 1] != 0) {
+          Falar(`${valores[i]} dividido por ${valores[i + 1]}`);
+          valores[i] = valores[i] / valores[i + 1];
+          //se na array operações aparecer um / ele vai verificar se nenhum dos numeros é 0, falar e dividir os valores;
+        } else {
+          setNumeros([]);
+          Reconhecer("essa operação não é permitida")
+          return
+        }// caso tenha um 0 nessa expressao ele nao executa a conta, apenas limpa a array
+      }
+      else if (operacoes[i] === '+') {
+        Falar(`${valores[i]} + ${valores[i + 1]}`);
+        valores[i] = valores[i] + valores[i + 1];
+      } else if (operacoes[i] === '-') {
+        Falar(`${valores[i]} menos ${valores[i + 1]}`);
+        valores[i] = valores[i] - valores[i + 1];
+      }
+      valores.splice(i + 1, 1); //remove todos os i + 1 desnecessarios e deixa somente o resultado
+      operacoes.splice(i, 1); //remove o operador
+      i--;
 
-      if (operacoes[i] === '*' || operacoes[i] === '/') {
+    }
 
-        if (operacoes[i] === '*') {
-          Reconhecer(`${valores[i]} vezes ${valores[i + 1]}`);
-          valores[i] = valores[i] * valores[i + 1];
+    let resultado = valores[valores.length - 1] //seta o resultado como o ultimo valor da array valores
 
-        } else if (operacoes[i] === '/') {
-          if (valores[i + 1] !== 0) {
-            Reconhecer(`${valores[i]} dividido por ${valores[i + 1]}`);
-            valores[i] = valores[i] / valores[i + 1];
+    setTimeout(() => { //seta um tempo antes de falar o resultado
 
-          } else {
-            alert("essa operação não é permitida")
-          }
+      if (operadorSobrou != null) {
+        if (Number.isInteger(resultado)) {
+
+          setNumeros([resultado, operadorSobrou]); //guarda o resultado e operador que sobrou
+          Falar(`é igual à ${resultado}`); // fala o resultado
+        } else {
+
+          setNumeros([resultado.toFixed(2), operadorSobrou]); //caso o numero nao seja inteiro
+          Falar(`é igual à ${resultado.toFixed(2)}`);
+        }
+      } else {
+        if (Number.isInteger(resultado)) {
+
+          setNumeros([resultado]);
+          Falar(`é igual à ${resultado}`);
+        } else {
+
+          setNumeros([resultado.toFixed(2)]);
+          Falar(`é igual à ${resultado.toFixed(2)}`);
         }
 
-        valores.splice(i + 1, 1);
-        operacoes.splice(i, 1);
-        i--;
       }
-
-    }
-    for (let i = 0; i < operacoes.length; i++) {
-      if (operacoes[i] === '+') {
-        Reconhecer(`${valores[i]} mais ${valores[i + 1]}`);
-        valores[i + 1] = valores[i] + valores[i + 1];
-      } else {
-        Reconhecer(`${valores[i]} menos ${valores[i + 1]}`);
-        valores[i + 1] = valores[i] - valores[i + 1];
-      }
-    }
-
-    let resultado = valores[valores.length - 1]
-
-    if (operadorSobrou != null) {
-      if (Number.isInteger(resultado)) {
-        setIsResult(true)
-        setNumeros([resultado, operadorSobrou]);
-        Reconhecer(`é igual à ${resultado}`);
-      } else {
-        setIsResult(true)
-        setNumeros([resultado.toFixed(2), operadorSobrou]);
-        Reconhecer(`é igual à ${resultado.toFixed(2)}`);
-      }
-    } else {
-      if (Number.isInteger(resultado)) {
-        setIsResult(true)
-        setNumeros([resultado]);
-        Reconhecer(`é igual à ${resultado}`);
-      } else {
-        setIsResult(true)
-        setNumeros([resultado.toFixed(2)]);
-        Reconhecer(`é igual à ${resultado.toFixed(2)}`);
-      }
-
-    }
+    }, 1500);
+    setIsResult(true)
     return valores[valores.length - 1];
   }
 
-  // function validOperation() {
-  //   if ((operadores.includes(expressao[0]) || expressao.length < 3 || (expressao.length == 3 && expressao[expressao.length - 1] == "=")) && numeros.length < 1) {
-  //     setNumeros([]);
-  //     setInfo("a");
-  //   } else {
-  //     setNumeros([...numeros, '=']);
-  //   }
-  // }
 
   return (
 
@@ -312,7 +300,7 @@ const Wrapper = styled.div`
   justify-content: center;
   align-items: center;
   margin-top: 3rem;
- 
+  
   `
 const Calculadora = styled.div`
   display: flex;
