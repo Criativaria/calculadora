@@ -1,10 +1,6 @@
 import styled from "styled-components"
 import { Delete, Plus, Minus, Equal, X, Divide } from "lucide-react";
 import { useEffect, useState } from "react";
-// import Falar from "./components/falar";
-
-//Lista de coisas pra fazer
-//verificação se a tecla pode ser teclada ou nao
 
 function App() {
   const [texto, setTexto] = useState();
@@ -170,8 +166,7 @@ function App() {
     setInfo('Apagou toda a operação');
   }
 
-
-  function conta() {
+  function conta() { //excuta a conta
     const operacoes = [];
     const valores = [];
     //arrays em que vamos separar operadores e numeros
@@ -242,7 +237,6 @@ function App() {
     setIsResult(true)
     return valores[valores.length - 1];
   }
-
 
   return (
 
