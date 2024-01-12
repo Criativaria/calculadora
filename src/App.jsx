@@ -294,7 +294,10 @@ const Wrapper = styled.div`
   justify-content: center;
   align-items: center;
   margin-top: 3rem;
-  
+
+  @media(max-width: 425px) {
+   margin-top: 5rem;
+  }
   `
 const Calculadora = styled.div`
   display: flex;
@@ -305,6 +308,11 @@ const Calculadora = styled.div`
   height: 25rem;
   background-color: #dad7cd;
   border-radius: 1rem;
+
+  @media(max-width: 425px) {
+    width: 11rem;
+    height: 17rem;
+  }
   `
 
 const Visor = styled.div`
@@ -316,6 +324,15 @@ const Visor = styled.div`
   margin-bottom: 1rem;
   text-align: right;
   padding-right: 30px;
+  
+  @media(max-width: 425px) {
+    width: 8.5rem;
+    padding-block: 0.3px; 
+    margin-bottom: 8px;
+    box-shadow: 3px 3px #588157;
+    border-radius: 1rem;
+    
+  }
   .p{
     display: flex;
     align-items: end;
@@ -335,6 +352,11 @@ const Coluna = styled.div`
   .igual{
     padding-block: 2.80rem;
     padding-inline: 1.45rem;
+
+    @media(max-width: 425px) {
+      padding-block: 42px;
+      padding-inline: 13px;
+    }
   }
 `
 const Tecla = styled.div`
@@ -348,5 +370,11 @@ const Tecla = styled.div`
     box-shadow: 6px 6px #588157;
     margin: 2px;
     cursor: pointer;
-
+    
+    @media(max-width: 425px) {
+      padding-block: 14px;
+      padding-inline: 15px;
+      border-radius: 0.5rem;
+      box-shadow: 3px 3px #588157;
+    }
 `
